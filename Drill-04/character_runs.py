@@ -30,6 +30,5 @@ while True:
         if x <= 0:
             direct = 0
 
-
 # close_canvas()
 
