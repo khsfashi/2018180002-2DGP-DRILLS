@@ -31,5 +31,5 @@ while True:
             direct = 0
 
 
-close_canvas()
+# close_canvas()
 
