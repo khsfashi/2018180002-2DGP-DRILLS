@@ -7,6 +7,7 @@ def handle_events():
     global x, y
     global ch_x, ch_y
     global turn
+    global start
     events = get_events()
     for event in events:
         if event.type == SDL_QUIT:
@@ -22,9 +23,10 @@ def handle_events():
                 turn = 0
             elif ch_x < x:
                 turn = 1
-
-
-
+            for i in range(0, 100 + 1, 2):
+                t = 1 / 100
+                ch_x = (1-t) * ch_x + t * x
+                ch_y = (1-t) * ch_y + t * y
     pass
 
 
