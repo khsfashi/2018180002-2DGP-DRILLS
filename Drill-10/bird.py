@@ -3,7 +3,7 @@ from pico2d import *
 
 import game_world
 
-# 918 * 506
+# 918 * 506.
 
 PIXEL_PER_METER = (10.0 / 0.5)
 RUN_SPEED_KMPH = 40.0
