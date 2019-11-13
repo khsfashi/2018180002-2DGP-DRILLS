@@ -149,6 +149,11 @@ class Boy:
         self.velocity = 0
         self.acceleration = 0
         self.jumping = False
+        self.check_on_brick = False
+        self.collided_Rect = [0, 0, 0, 0]
+        self.collided_Rect_Height = 0
+        self.collided_Rect_Width = 0
+        self.delta_speed_brick = 0
         self.frame = 0
         self.event_que = []
         self.cur_state = IdleState
@@ -173,6 +178,7 @@ class Boy:
             self.cur_state.exit(self, event)
             self.cur_state = next_state_table[self.cur_state][event]
             self.cur_state.enter(self, event)
+        self.x += self.delta_speed_brick
 
     def draw(self):
         self.cur_state.draw(self)
@@ -191,5 +197,31 @@ class Boy:
     def stop_boy(self):
         self.acceleration = 0
         self.jumping = False
+
+    def intersected_brick(self):
+        self.collided_Rect_Height = self.collided_Rect[3] - self.collided_Rect[1]
+        self.collided_Rect_Width = self.collided_Rect[2] - self.collided_Rect[0]
+        if self.collided_Rect_Width > self.collided_Rect_Height:
+            if self.collided_Rect[3] == self.y + 40:
+                self.y -= self.collided_Rect_Height
+                self.acceleration = -1
+                self.y -= 1
+                self.delta_speed_brick = 0
+            elif self.collided_Rect[1] == self.y - 35:
+                self.y += self.collided_Rect_Height
+                self.jumping = 0
+                self.acceleration = 0
+                self.check_on_brick = True
+        else:
+            if self.collided_Rect[0] == self.x - 20:
+                self.x += self.collided_Rect_Width
+            elif self.collided_Rect[2] == self.x + 20:
+                self.x -= self.collided_Rect_Width
+            self.delta_speed_brick = 0
+
+    def set_move_on_brick(self, speed):
+        self.delta_speed_brick = speed
+
+
 
 

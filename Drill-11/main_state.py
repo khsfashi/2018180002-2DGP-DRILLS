@@ -9,11 +9,13 @@ import game_world
 from boy import Boy
 from grass import Grass
 from ball import Ball, BigBall
+from brick import Brick
 
 name = "MainState"
 
 boy = None
 grass = None
+brick = None
 balls = []
 big_balls = []
 
@@ -28,7 +30,31 @@ def collide(a, b):
     if bottom_a > top_b: return False
     return True
 
+def intersected_rectangle(collided_Rect, a, b):
+    vertical = False
+    horizontal = False
+    rect1_left, rect1_bottom, rect1_right, rect1_top = a.get_bb()
+    rect2_left, rect2_bottom, rect2_right, rect2_top = b.get_bb()
 
+    if rect1_left > rect2_right: return False
+    if rect1_right < rect2_left: return False
+    if rect1_top < rect2_bottom: return False
+    if rect1_bottom > rect2_top: return False
+
+    if rect1_left <= rect2_right and rect1_right >= rect2_left:
+        horizontal = True
+        collided_Rect[0] = max(rect1_left, rect2_left)
+        collided_Rect[2] = min(rect1_right, rect2_right)
+
+    if rect1_top >= rect2_bottom and rect1_bottom <= rect2_top:
+        vertical = True
+        collided_Rect[3] = min(rect1_top, rect2_top)
+        collided_Rect[1] = max(rect1_bottom, rect2_bottom)
+
+    if vertical and horizontal:
+        return True
+    else:
+        return False
 
 
 def enter():
@@ -44,6 +70,10 @@ def enter():
     balls = [Ball() for i in range(10)] + [BigBall() for i in range(10)]
     for ball in balls:
         game_world.add_object(ball, 1)
+
+    global brick
+    brick = Brick()
+    game_world.add_object(brick, 0)
 
 def exit():
     game_world.clear()
@@ -71,6 +101,18 @@ def update():
     for game_object in game_world.all_objects():
         game_object.update()
 
+    if intersected_rectangle(boy.collided_Rect, brick, boy):
+        boy.intersected_brick()
+        boy.set_move_on_brick(brick.get_speed())
+    else:
+        boy.delta_speed_brick = 0
+        if not boy.check_on_brick:
+            if not boy.jumping:
+                boy.acceleration = 0
+            boy.jumping = 1
+        else:
+            boy.check_on_brick = False
+
     for ball in balls:
         if collide(boy, ball):
             balls.remove(ball)
@@ -78,6 +120,9 @@ def update():
     for ball in balls:
         if collide(grass, ball):
             ball.stop()
+        if collide(brick, ball):
+            ball.stop()
+            ball.set_move_on_brick(brick.get_speed())
     if collide(grass, boy):
         boy.stop_boy()
 
