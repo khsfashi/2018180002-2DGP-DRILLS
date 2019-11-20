@@ -39,8 +39,11 @@ class Zombie:
         self.patrol_order = 1
         self.target_x, self.target_y = None, None
         self.x, self.y = self.patrol_positions[0]
+        self.hp = 0
+        self.min_distance_soccer = 10000000
 
         self.load_images()
+        self.font = load_font('ENCR10B.TTF', 16)
         self.dir = random.random()*2*math.pi # random moving direction
         self.speed = 0
         self.timer = 1.0 # change direction every 1 sec when wandering
@@ -67,8 +70,28 @@ class Zombie:
     def find_player(self):
         boy = main_state.get_boy()
         distance = (boy.x - self.x)**2 + (boy.y - self.y)**2
-        if distance < (PIXEL_PER_METER * 10)**2:
+        if distance < (PIXEL_PER_METER * 8)**2:
             self.dir = math.atan2(boy.y - self.y, boy.x - self.x)
+            return BehaviorTree.SUCCESS
+        else:
+            self.speed = 0
+            return BehaviorTree.FAIL
+
+    def find_soccer_ball(self):
+        balls = main_state.get_balls()
+        min_ball_x = 0
+        min_ball_y = 0
+        for ball in balls:
+            distance = (ball.x - self.x)**2 + (ball.y - self.y)**2
+            if distance < (PIXEL_PER_METER * 5)**2:
+                if distance < self.min_distance_soccer:
+                    print("축구공 찾음")
+                    self.min_distance_soccer = distance
+                    min_ball_x = ball.x
+                    min_ball_y = ball.y
+
+        if not self.min_distance_soccer == 10000000:
+            self.dir = math.atan2(min_ball_y - self.y, min_ball_x - self.x)
             return BehaviorTree.SUCCESS
         else:
             self.speed = 0
@@ -76,6 +99,17 @@ class Zombie:
 
     def move_to_player(self):
         self.speed = RUN_SPEED_PPS
+        self.calculate_current_position()
+        return BehaviorTree.SUCCESS
+
+    def move_to_soccer_ball(self):
+        self.speed = RUN_SPEED_PPS
+        self.calculate_current_position()
+        return BehaviorTree.SUCCESS
+
+    def move_from_player(self):
+        self.speed = RUN_SPEED_PPS
+        self.dir = self.dir + 180
         self.calculate_current_position()
         return BehaviorTree.SUCCESS
 
@@ -97,21 +131,46 @@ class Zombie:
         else:
             return BehaviorTree.RUNNING
 
+    def comp_player_zombie(self):
+        boy = main_state.get_boy()
+        if boy.hp >= self.hp:
+            print("보이가 큼")
+            self.speed = 0
+            return BehaviorTree.FAIL
+        else:
+            print("좀비가 큼")
+            return BehaviorTree.SUCCESS
+
     def build_behavior_tree(self):
         wander_node = LeafNode("Wander", self.wander)
         find_player_node = LeafNode("Find Player", self.find_player)
+        comp_hp_node = LeafNode("Is Zombie HP more than Player", self.comp_player_zombie)
         move_to_player_node = LeafNode("Move to Player", self.move_to_player)
         chase_node = SequenceNode("Chase")
-        chase_node.add_children(find_player_node, move_to_player_node)
-        wander_chase_node = SelectorNode("WanderChase")
-        wander_chase_node.add_children(chase_node, wander_node)
-        self.bt = BehaviorTree(wander_chase_node)
+        chase_node.add_children(find_player_node, comp_hp_node, move_to_player_node)
+        move_from_player_node = LeafNode("Move from Player", self.move_from_player)
+        run_from_player_node = SequenceNode("Run from Player")
+        run_from_player_node.add_children(find_player_node, move_from_player_node)
+        find_soccer_ball_node = LeafNode("Find Soccer Ball", self.find_soccer_ball)
+        move_to_soccer_ball_node = LeafNode("Move to Soccer Ball", self.move_to_soccer_ball)
+        soccer_ball_chase_node = SequenceNode("Soccer Ball")
+        soccer_ball_chase_node.add_children(find_soccer_ball_node, move_to_soccer_ball_node)
+        root_node = SelectorNode("RootNode")
+        root_node.add_children(chase_node, run_from_player_node, soccer_ball_chase_node, wander_node)
+        self.bt = BehaviorTree(root_node)
 
 
 
 
     def get_bb(self):
         return self.x - 50, self.y - 50, self.x + 50, self.y + 50
+
+    def plus_hp(self):
+        self.hp += 100
+        self.min_distance_soccer = 10000000
+
+    def get_hp(self):
+        return self.hp
 
     def update(self):
         self.bt.run()
@@ -128,6 +187,9 @@ class Zombie:
                 Zombie.images['Idle'][int(self.frame)].draw(self.x, self.y, 100, 100)
             else:
                 Zombie.images['Walk'][int(self.frame)].draw(self.x, self.y, 100, 100)
+
+        draw_rectangle(*self.get_bb())
+        self.font.draw(self.x - 60, self.y + 50, '(hp : %d)' % self.hp, (255, 255, 0))
 
     def handle_event(self, event):
         pass
