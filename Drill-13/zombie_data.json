@@ -1,0 +1,8 @@
+[
+  {"name": "OH", "x":  2, "y":   2, "size" : 1.0},
+  {"name": "SUENG"  , "x":  8, "y":   3, "size" : 2.0},
+  {"name": "DAM"  , "x": 30, "y":  20, "size" : 1.3},
+  {"name": "BHYUNG"  , "x": 10, "y":  30, "size" : 0.5},
+  {"name": "SHIN"   , "x": 20, "y":  40, "size" : 1.4}
+]
+
