@@ -99,7 +99,7 @@ class WalkingState:
                     boy.image.clip_draw(int(boy.frame) * 100, 300, 100, 100, cx, cy)
                 else:
                     boy.image.clip_draw(int(boy.frame) * 100, 200, 100, 100, cx, cy)
-        boy.font.draw(cx - 70, cy + 50, '(%5d, %5d)' % (boy.x, boy.y),
+        boy.font.draw(cx - 50, cy + 50, '(Ball : %d)' % boy.ball_count,
                        (255, 255, 0))
 
 
@@ -124,15 +124,17 @@ class Boy:
         self.event_que = []
         self.cur_state = WalkingState
         self.cur_state.enter(self, None)
+        self.ball_count = 0
 
     def get_bb(self):
-        return self.x - 50, self.y - 50, self.x + 50, self.y + 50
+        return self.cx - 50, self.cy - 50, self.cx + 50, self.cy + 50
 
 
     def set_background(self, bg):
         self.bg = bg
         self.x = self.bg.w / 2
         self.y = self.bg.h / 2
+
 
     def add_event(self, event):
         self.event_que.insert(0, event)
@@ -144,9 +146,11 @@ class Boy:
             self.cur_state.exit(self, event)
             self.cur_state = next_state_table[self.cur_state][event]
             self.cur_state.enter(self, event)
+        self.cx, self.cy = self.x - self.bg.window_left, self.y - self.bg.window_bottom
 
     def draw(self):
         self.cur_state.draw(self)
+        draw_rectangle(*self.get_bb())
         # self.font.draw(self.canvas_width//2 - 60, self.canvas_height//2 + 50, '(%5d, %5d)' % (self.x, self.y), (255, 255, 0))
 
     def handle_event(self, event):
